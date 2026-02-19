@@ -23,14 +23,12 @@ interface ResultsPageProps {
   results: DimensionResult[];
   answers: Answers;
   onRestart: () => void;
-  notionPageId: string | null;
 }
 
 export default function ResultsPage({
   results,
   answers,
   onRestart,
-  notionPageId,
 }: ResultsPageProps) {
   const patterns = getMatchingPatterns(results);
   const totalScore = getTotalScore(results);
@@ -134,9 +132,7 @@ export default function ResultsPage({
       <ShareModal
         open={shareOpen}
         onClose={() => setShareOpen(false)}
-        results={results}
         answers={answers}
-        notionPageId={notionPageId}
       />
     </div>
   );

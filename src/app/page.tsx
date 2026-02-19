@@ -2,6 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import HeroVideo from "@/components/HeroVideo";
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col">
@@ -9,7 +11,7 @@ export default function Home() {
       <header className="px-6 py-6 md:px-12 relative z-10">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Image
-            src="/aieutics_transparentbg_logo.png"
+            src={`${basePath}/aieutics_transparentbg_logo.png`}
             alt="Aieutics"
             width={80}
             height={80}
@@ -103,7 +105,7 @@ export default function Home() {
       <footer className="px-6 py-6 border-t border-white/10">
         <div className="max-w-4xl mx-auto flex flex-col items-center gap-3">
           <Image
-            src="/aieutics_transparentbg_logo.png"
+            src={`${basePath}/aieutics_transparentbg_logo.png`}
             alt="Aieutics"
             width={24}
             height={24}

@@ -20,7 +20,7 @@ export default function HeroVideo() {
   return (
     <video
       className="absolute inset-0 w-full h-full object-cover opacity-85 pointer-events-none"
-      src="/hero-bg.mp4"
+      src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/hero-bg.mp4`}
       autoPlay
       muted
       playsInline

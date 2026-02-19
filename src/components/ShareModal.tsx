@@ -2,49 +2,42 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { track } from "@vercel/analytics";
-import type { DimensionResult } from "@/lib/diagnostic-data";
 import type { Answers } from "@/lib/scoring";
 import { encodeAnswers } from "@/lib/share";
-import { getTotalScore, getTotalMax, getMatchingPatterns, getRedCount } from "@/lib/scoring";
 
 interface ShareModalProps {
   open: boolean;
   onClose: () => void;
-  results: DimensionResult[];
   answers: Answers;
-  notionPageId: string | null;
 }
 
-type ModalState = "form" | "loading" | "success" | "error";
+type ModalState = "idle" | "copied";
 
 export default function ShareModal({
   open,
   onClose,
-  results,
   answers,
-  notionPageId,
 }: ShareModalProps) {
-  const [state, setState] = useState<ModalState>("form");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
-  const nameRef = useRef<HTMLInputElement>(null);
+  const [state, setState] = useState<ModalState>("idle");
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Focus first field on open
+  const encoded = encodeAnswers(answers);
+  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}${process.env.NEXT_PUBLIC_BASE_PATH || ""}/diagnostic?r=${encoded}`;
+
+  // Focus input on open
   useEffect(() => {
     if (open) {
-      setTimeout(() => nameRef.current?.focus(), 100);
+      setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }, 100);
     }
   }, [open]);
 
   // Reset on close
   useEffect(() => {
     if (!open) {
-      const timer = setTimeout(() => {
-        setState("form");
-        setErrorMsg("");
-      }, 300);
+      const timer = setTimeout(() => setState("idle"), 300);
       return () => clearTimeout(timer);
     }
   }, [open]);
@@ -71,79 +64,18 @@ export default function ShareModal({
     };
   }, [open]);
 
-  const handleSend = useCallback(async () => {
-    if (!name.trim() || !email.trim()) {
-      setErrorMsg("Please fill in your name and email.");
-      setState("error");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setErrorMsg("Please enter a valid email address.");
-      setState("error");
-      return;
-    }
-
-    setState("loading");
-    setErrorMsg("");
-
+  const handleCopy = useCallback(async () => {
     try {
-      const encoded = encodeAnswers(answers);
-      const shareUrl = `${window.location.origin}/diagnostic?r=${encoded}`;
-
-      const res = await fetch("/api/share", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          email: email.trim(),
-          companyName: companyName.trim() || undefined,
-          shareUrl,
-          totalScore: getTotalScore(results),
-          totalMax: getTotalMax(results),
-          dimensions: results.map((r) => ({
-            name: r.dimension.name,
-            score: r.score,
-            maxScore: r.maxScore,
-            status: r.status,
-          })),
-          patterns: getMatchingPatterns(results).map((p) => ({
-            label: p.label,
-            description: p.description,
-          })),
-          redCount: getRedCount(results),
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Send failed");
-      }
-
-      track("email_shared");
-      setState("success");
-
-      // Update Notion record with contact details (fire-and-forget)
-      if (notionPageId) {
-        fetch("/api/submit/update", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            pageId: notionPageId,
-            name: name.trim(),
-            email: email.trim(),
-            projectName: companyName.trim() || name.trim(),
-            shareUrl,
-          }),
-        }).catch(() => {});
-      }
+      await navigator.clipboard.writeText(shareUrl);
+      track("link_shared");
+      setState("copied");
     } catch {
-      setErrorMsg("Something went wrong. Please try again.");
-      setState("error");
+      // Fallback: select the input text
+      inputRef.current?.select();
     }
-  }, [name, email, companyName, answers, results, notionPageId]);
+  }, [shareUrl]);
 
-  const isLoading = state === "loading";
-  const isSuccess = state === "success";
-  const showError = state === "error" && errorMsg;
+  const isCopied = state === "copied";
 
   return (
     <div
@@ -170,7 +102,7 @@ export default function ShareModal({
         style={{ transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
       >
         <div className="p-8">
-          {!isSuccess ? (
+          {!isCopied ? (
             <>
               <h3
                 id="share-modal-title"
@@ -179,75 +111,28 @@ export default function ShareModal({
                 Share Your Results
               </h3>
               <p className="font-[family-name:var(--font-body)] text-sm text-[var(--color-grey)] mb-7">
-                Send your ICP clarity profile by email
+                Copy the link below to share your ICP clarity profile
               </p>
 
-              <div className="mb-5">
+              <div className="mb-6">
                 <label className="block font-[family-name:var(--font-heading)] text-[0.8rem] font-bold mb-1.5">
-                  Your name
+                  Shareable link
                 </label>
                 <input
-                  ref={nameRef}
+                  ref={inputRef}
                   type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Jean Dupont"
-                  disabled={isLoading}
-                  className="w-full px-4 py-3 text-[0.9rem] font-[family-name:var(--font-body)] border border-[var(--color-grey-light)] rounded-xl bg-[var(--color-white)] text-[var(--color-foreground)] outline-none transition-all duration-200 placeholder:text-[var(--color-grey-lighter)] focus:border-[var(--color-orange)] focus:shadow-[0_0_0_3px_rgba(255,95,31,0.12)] disabled:bg-[var(--color-tag-bg)] disabled:text-[var(--color-grey)] disabled:cursor-not-allowed"
+                  value={shareUrl}
+                  readOnly
+                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                  className="w-full px-4 py-3 text-[0.85rem] font-[family-name:var(--font-mono)] border border-[var(--color-grey-light)] rounded-xl bg-[var(--color-tag-bg)] text-[var(--color-foreground)] outline-none transition-all duration-200 focus:border-[var(--color-orange)] focus:shadow-[0_0_0_3px_rgba(255,95,31,0.12)] select-all"
                 />
               </div>
-
-              <div className="mb-5">
-                <label className="block font-[family-name:var(--font-heading)] text-[0.8rem] font-bold mb-1.5">
-                  Email address
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@company.com"
-                  disabled={isLoading}
-                  className="w-full px-4 py-3 text-[0.9rem] font-[family-name:var(--font-body)] border border-[var(--color-grey-light)] rounded-xl bg-[var(--color-white)] text-[var(--color-foreground)] outline-none transition-all duration-200 placeholder:text-[var(--color-grey-lighter)] focus:border-[var(--color-orange)] focus:shadow-[0_0_0_3px_rgba(255,95,31,0.12)] disabled:bg-[var(--color-tag-bg)] disabled:text-[var(--color-grey)] disabled:cursor-not-allowed"
-                />
-              </div>
-
-              <div className="mb-5">
-                <label className="block font-[family-name:var(--font-heading)] text-[0.8rem] font-bold mb-1.5">
-                  Company name <span className="font-normal text-[var(--color-grey)]">(optional)</span>
-                </label>
-                <input
-                  type="text"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="e.g. Acme Corp"
-                  disabled={isLoading}
-                  className="w-full px-4 py-3 text-[0.9rem] font-[family-name:var(--font-body)] border border-[var(--color-grey-light)] rounded-xl bg-[var(--color-white)] text-[var(--color-foreground)] outline-none transition-all duration-200 placeholder:text-[var(--color-grey-lighter)] focus:border-[var(--color-orange)] focus:shadow-[0_0_0_3px_rgba(255,95,31,0.12)] disabled:bg-[var(--color-tag-bg)] disabled:text-[var(--color-grey)] disabled:cursor-not-allowed"
-                />
-              </div>
-
-              <p className="text-[0.7rem] text-[var(--color-grey)] leading-relaxed mb-5">
-                Your name and email are stored securely to deliver your results and help us improve the diagnostic.
-              </p>
-
-              {showError && (
-                <p className="text-[0.8rem] text-[var(--color-red)] mb-4">
-                  {errorMsg}
-                </p>
-              )}
 
               <button
-                onClick={handleSend}
-                disabled={isLoading}
-                className={`
-                  w-full py-3.5 font-[family-name:var(--font-heading)] text-[0.9rem] font-bold
-                  text-white bg-[var(--color-orange)] border-none rounded-xl cursor-pointer
-                  transition-all duration-300
-                  hover:shadow-[0_0_30px_rgba(255,95,31,0.3)] hover:scale-[1.01]
-                  disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:scale-100
-                  ${isLoading ? "animate-pulse" : ""}
-                `}
+                onClick={handleCopy}
+                className="w-full py-3.5 font-[family-name:var(--font-heading)] text-[0.9rem] font-bold text-white bg-[var(--color-orange)] border-none rounded-xl cursor-pointer transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,95,31,0.3)] hover:scale-[1.01]"
               >
-                {isLoading ? "Sending..." : "Send Results"}
+                Copy Link
               </button>
 
               <button
@@ -274,14 +159,11 @@ export default function ShareModal({
                 </svg>
               </div>
               <p className="font-[family-name:var(--font-heading)] text-lg font-bold mb-2">
-                Results sent!
+                Link copied!
               </p>
               <p className="font-[family-name:var(--font-body)] text-sm text-[var(--color-grey)] leading-relaxed mb-6">
-                Your diagnostic profile has been sent to{" "}
-                <strong className="text-[var(--color-foreground)]">{email}</strong>.
-                <br />
-                You&apos;ll also receive a copy at{" "}
-                <strong className="text-[var(--color-foreground)]">hello@aieutics.com</strong>.
+                The shareable link has been copied to your clipboard.
+                Anyone with this link can view your diagnostic results.
               </p>
               <button
                 onClick={onClose}
