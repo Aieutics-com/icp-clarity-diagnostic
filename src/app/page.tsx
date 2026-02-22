@@ -1,10 +1,13 @@
-import Link from "next/link";
+"use client";
+
 import Image from "next/image";
+import { useState } from "react";
 import HeroVideo from "@/components/HeroVideo";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
 export default function Home() {
+  const [showGate, setShowGate] = useState(false);
   return (
     <main className="min-h-screen flex flex-col">
       {/* Header */}
@@ -45,15 +48,14 @@ export default function Home() {
             proposition and pricing to actually convert.
           </p>
 
-          <Link
-            href="/diagnostic"
-            className="inline-block bg-[var(--color-orange)] text-white font-[family-name:var(--font-heading)] font-bold text-lg px-12 py-4 rounded-xl shadow-[0_0_20px_rgba(255,95,31,0.2)] hover:shadow-[0_0_40px_rgba(255,95,31,0.3)] hover:scale-[1.02] transition-all duration-300"
+          <button
+            onClick={() => setShowGate(true)}
+            className="inline-block bg-white/15 text-white/40 font-[family-name:var(--font-heading)] font-bold text-lg px-12 py-4 rounded-xl border border-white/10 cursor-not-allowed transition-all duration-300"
           >
             Start the Diagnostic
-          </Link>
-          <p className="font-[family-name:var(--font-body)] text-sm text-white/60 mt-4">
-            Takes 3-4 minutes. Only what is concretely true today counts as
-            Yes.
+          </button>
+          <p className="font-[family-name:var(--font-body)] text-sm text-white/40 mt-4">
+            Available to Aieutics clients
           </p>
 
           {/* What This Tool Tests — 5 dimension cards */}
@@ -120,6 +122,39 @@ export default function Home() {
           </p>
         </div>
       </footer>
+
+      {/* Client-only gate modal */}
+      {showGate && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={() => setShowGate(false)}
+        >
+          <div
+            className="relative max-w-md mx-4 bg-[#141414] border border-white/10 rounded-2xl p-8 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowGate(false)}
+              className="absolute top-4 right-4 text-white/40 hover:text-white/70 transition-colors text-lg"
+              aria-label="Close"
+            >
+              &#x2715;
+            </button>
+            <p className="font-[family-name:var(--font-heading)] text-xl font-bold text-white mb-3">
+              This tool is available to Aieutics clients
+            </p>
+            <p className="font-[family-name:var(--font-body)] text-sm text-white/60 leading-relaxed mb-6">
+              The ICP Clarity Diagnostic is part of Aieutics consulting and coaching engagements. If you would like to learn more or request access, get in touch.
+            </p>
+            <a
+              href="mailto:alexandra@aieutics.com?subject=Request%20info%3A%20ICP%20Clarity%20Diagnostic"
+              className="inline-block bg-[var(--color-orange)] text-white font-[family-name:var(--font-heading)] font-bold text-sm px-8 py-3 rounded-xl hover:shadow-[0_0_30px_rgba(255,95,31,0.3)] hover:scale-[1.02] transition-all duration-300"
+            >
+              Request Information
+            </a>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
