@@ -2,23 +2,35 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import HeroVideo from "@/components/HeroVideo";
-
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
 export default function Home() {
   const [showGate, setShowGate] = useState(false);
   return (
-    <main className="min-h-screen flex flex-col">
+    <main className="min-h-screen flex flex-col relative bg-[#0a0a0a] text-white overflow-hidden">
+      {/* Video background */}
+      <div className="fixed inset-0 z-0 overflow-hidden">
+        <video
+          autoPlay
+          muted
+          playsInline
+          loop
+          className="w-full h-full object-cover opacity-50"
+        >
+          <source src={`${basePath}/hero-bg.mp4`} type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/40" />
+      </div>
+
       {/* Header */}
-      <header className="px-6 py-6 md:px-12 relative z-10">
+      <header className="relative z-10 px-6 py-6 md:px-12">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Image
             src={`${basePath}/aieutics_transparentbg_logo.png`}
             alt="Aieutics"
             width={80}
             height={80}
-            className="h-20 w-auto"
+            className="h-20 w-auto brightness-0 invert"
           />
           <span className="font-[family-name:var(--font-body)] text-sm text-white/70 italic hidden sm:inline">
             See further. Think deeper. Break through.
@@ -27,11 +39,8 @@ export default function Home() {
       </header>
 
       {/* Hero */}
-      <section className="flex-1 flex items-center justify-center px-6 py-16 md:py-24 relative overflow-hidden">
-        {/* Video background */}
-        <HeroVideo />
-
-        <div className="max-w-2xl mx-auto text-center relative z-10">
+      <section className="relative z-10 flex-1 flex items-center justify-center px-6 py-16 md:py-24">
+        <div className="max-w-2xl mx-auto text-center">
           <h1 className="font-[family-name:var(--font-heading)] text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6 text-white animate-text-focus-in">
             How Clear Is Your
             <br />
@@ -104,14 +113,14 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="px-6 py-6 border-t border-white/10">
+      <footer className="relative z-10 px-6 py-6 border-t border-white/8">
         <div className="max-w-4xl mx-auto flex flex-col items-center gap-3">
           <Image
             src={`${basePath}/aieutics_transparentbg_logo.png`}
             alt="Aieutics"
             width={24}
             height={24}
-            className="h-6 w-auto opacity-40"
+            className="h-6 w-auto opacity-30 brightness-0 invert"
           />
           <p className="font-[family-name:var(--font-body)] text-xs text-white/50">
             Built by{" "}
