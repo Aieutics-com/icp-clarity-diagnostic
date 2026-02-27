@@ -22,7 +22,7 @@ export default function ShareModal({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const encoded = encodeAnswers(answers);
-  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}${process.env.NEXT_PUBLIC_BASE_PATH || ""}/diagnostic?r=${encoded}`;
+  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}${process.env.NEXT_PUBLIC_BASE_PATH || ""}/diagnostic-demo?r=${encoded}`;
 
   // Focus input on open
   useEffect(() => {

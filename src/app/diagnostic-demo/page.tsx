@@ -77,7 +77,7 @@ function DiagnosticContent() {
     setCurrentStep(0);
     setShowResults(false);
     isSharedView.current = false;
-    window.history.replaceState({}, "", `${process.env.NEXT_PUBLIC_BASE_PATH || ""}/diagnostic`);
+    window.history.replaceState({}, "", `${process.env.NEXT_PUBLIC_BASE_PATH || ""}/diagnostic-demo`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 

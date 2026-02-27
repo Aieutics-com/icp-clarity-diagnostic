@@ -36,5 +36,5 @@ export function decodeAnswers(encoded: string): Answers | null {
  */
 export function buildShareUrl(answers: Answers, baseUrl: string): string {
   const encoded = encodeAnswers(answers);
-  return `${baseUrl}/diagnostic?r=${encoded}`;
+  return `${baseUrl}/diagnostic-demo?r=${encoded}`;
 }
